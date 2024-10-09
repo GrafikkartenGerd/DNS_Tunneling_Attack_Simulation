@@ -7,9 +7,6 @@ services:
     networks:
       my_network:
         ipv4_address: 172.36.0.2
-    volumes:
-      - ./sender/sender.py:/app/sender.py
-      - ./sender/data.txt:/app/data.txt
     command: python /app/sender.py
 
   receiver:
@@ -18,8 +15,6 @@ services:
     networks:
       my_network:
         ipv4_address: 172.36.0.3
-    volumes:
-      - ./receiver/receiver.py:/app/receiver.py
     command: python /app/receiver.py
 
 networks:
