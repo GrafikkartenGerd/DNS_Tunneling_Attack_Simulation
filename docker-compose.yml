@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  sender:
+    container_name: sender
+    build: ./sender
+    networks:
+      my_network:
+        ipv4_address: 172.36.0.2
+    volumes:
+      - ./sender/sender.py:/app/sender.py
+      - ./sender/data.txt:/app/data.txt
+    command: python /app/sender.py
+
+  receiver:
+    container_name: receiver
+    build: ./receiver
+    networks:
+      my_network:
+        ipv4_address: 172.36.0.3
+    volumes:
+      - ./receiver/receiver.py:/app/receiver.py
+    command: python /app/receiver.py
+
+networks:
+  my_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.36.0.0/16
