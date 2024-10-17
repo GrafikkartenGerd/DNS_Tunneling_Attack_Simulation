@@ -21,7 +21,7 @@ def start_server(port):
                 # Führe eine DNS-Abfrage durch
                 answers = dns.resolver.resolve(request.question[0].name, request.question[0].rdtype)
                 response = dns.message.make_response(request)
-
+                response = ["moin","moin"]
                 # Füge die Antwort hinzu
                 for rdata in answers:
                     response.answer.append(dns.rrset.from_rdata(request.question[0].name, 300, rdata))

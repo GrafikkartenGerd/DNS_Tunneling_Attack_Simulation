@@ -17,8 +17,8 @@ def send_dns_request(server_ip, domain):
 
 
 if __name__ == "__main__":
-    #receiver_ip = "127.0.0.1"  # Ändere dies in die IP des Empfängers, falls notwendig
-    receiver_ip = "172.36.0.3"  # Ändere dies in die IP des Empfängers, falls notwendig
+    receiver_ip = "127.0.0.1"  # Ändere dies in die IP des Empfängers, falls notwendig
+    #receiver_ip = "172.36.0.3"  # Ändere dies in die IP des Empfängers, falls notwendig
     domain_name = "justus-sieger.de"
 for i in range(100):
     sleep(5)
