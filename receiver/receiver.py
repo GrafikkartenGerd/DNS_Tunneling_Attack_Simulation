@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import socket
 import dns.message
 import dns.rrset
@@ -6,6 +8,30 @@ import dns.rdatatype
 import dns.rdataclass
 import dns.rdtypes.ANY.TXT
 
+def dns_decompose(text):
+    print(text)
+
+    padding_needed = len(text) % 4
+    if padding_needed:
+        text += '=' * (4 - padding_needed)
+
+    try:
+        decoded_bytes = base64.b64decode(text)
+        return decoded_bytes.decode('utf-8')
+    except Exception as e:
+        print(f"Error decoding: {e}")
+        return None
+
+def hash_string(input_string):
+    input_string += "asdas"
+    # Erstelle ein SHA-256 Hash-Objekt
+    sha256_hash = hashlib.sha256()
+
+    # Füge den String dem Hash-Objekt hinzu (muss zuerst in Bytes umgewandelt werden)
+    sha256_hash.update(input_string.encode('utf-8'))
+
+    # Gib den Hash als hexadezimale Darstellung zurück
+    return sha256_hash.hexdigest()
 
 def start_server(port):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -19,8 +45,9 @@ def start_server(port):
             try:
                 request = dns.message.from_wire(data)
 
-                domain = request.question[0].name
+                domain = str(request.question[0].name)
                 data = domain.split('.')[0]
+                MyHash = hash_string(domain)
 
                 if request.additional:
                     additional_records = []
@@ -33,6 +60,13 @@ def start_server(port):
                         print(f"Custom data received in Additional Section: {additional_records}")
                     else:
                         print("No valid TXT data in Additional Section.")
+                    if additional_records[0] == MyHash:
+                        print("Received hash matches the domain hash.")
+                        print("++++++" + dns_decompose(data) + "++++++")
+                        message = ["False"]
+                    else:
+                        print("Received hash does not match the domain hash.")
+                        message = ["True"]
                 else:
                     print("No Additional Section found in the request.")
 
@@ -44,7 +78,7 @@ def start_server(port):
                 ttl = 300
 
                 # TXT-Record für die Antwort hinzufügen
-                rdata = dns.rdtypes.ANY.TXT.TXT(dns.rdataclass.IN, dns.rdatatype.TXT, ["ja da bin ich"])
+                rdata = dns.rdtypes.ANY.TXT.TXT(dns.rdataclass.IN, dns.rdatatype.TXT, message)
                 rrset = dns.rrset.from_rdata(name, ttl, rdata)
                 response.answer.append(rrset)
 

