@@ -23,7 +23,6 @@ def dns_decompose(text):
         return None
 
 def hash_string(input_string):
-    input_string += "asdas"
     # Erstelle ein SHA-256 Hash-Objekt
     sha256_hash = hashlib.sha256()
 
@@ -38,6 +37,7 @@ def start_server(port):
         sock.bind(('0.0.0.0', port))
         print(f"Listening for DNS requests on port {port}...")
 
+        all_content = ""
         while True:
             data, addr = sock.recvfrom(512)
             print(f"Received DNS request from {addr}")
@@ -63,12 +63,21 @@ def start_server(port):
                     if additional_records[0] == MyHash:
                         print("Received hash matches the domain hash.")
                         print("++++++" + dns_decompose(data) + "++++++")
+                        all_content += dns_decompose(data)
+
+                        if domain.split('.')[1] == 0:
+                            print("End of transmission")
+                            print(all_content)
+                            all_content = ""
+
                         message = ["False"]
+
                     else:
                         print("Received hash does not match the domain hash.")
                         message = ["True"]
                 else:
                     print("No Additional Section found in the request.")
+                    message = ["True"]
 
                 # Erstelle eine Antwort auf die Anfrage
                 response = dns.message.make_response(request)

