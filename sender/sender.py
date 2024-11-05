@@ -1,18 +1,11 @@
-import base64
-import hashlib
-import socket
-import threading
-from itertools import count
 from time import sleep
-from scapy.all import *
 import dns.message
 import dns.query
-import dns.rrset
-import dns.rdatatype
-import dns.rdataclass
 import dns.rdata
-from scapy.layers.dns import DNS
-from scapy.layers.inet import IP
+import dns.rdataclass
+import dns.rdatatype
+import dns.rrset
+from scapy.all import *
 from scapy.sendrecv import sniff
 from scapy.utils import wrpcap
 
@@ -27,17 +20,40 @@ def dns_compose(text):
 
 
 def hash_string(input_string):
-    # Erstelle ein SHA-256 Hash-Objekt
     sha256_hash = hashlib.sha256()
-
-    # Füge den String dem Hash-Objekt hinzu (muss zuerst in Bytes umgewandelt werden)
     sha256_hash.update(input_string.encode('utf-8'))
-
-    # Gib den Hash als hexadezimale Darstellung zurück
     return sha256_hash.hexdigest()
 
+
+def print_records(response, record_type):
+    records = []
+
+    for answer in response.answer:
+        if answer.rdtype == record_type:
+            for item in answer.items:
+                if record_type == dns.rdatatype.TXT:
+                    records.append(b''.join(item.strings).decode())
+
+    if records:
+        for record in records:
+            return record
+    else:
+        print(f"No {dns.rdatatype.to_text(record_type)} records found.")
+    return False
+
+
+def pcap_writer():
+    def sniff_and_write():
+        packets = sniff(iface="eth0", filter="udp and port 53", timeout=8)
+        wrpcap("send_data.pcap", packets)
+        with open("packet_details.txt", "w") as file:
+            for packet in packets:
+                file.write(packet.show(dump=True) + "\n")
+
+    thread = threading.Thread(target=sniff_and_write)
+    thread.start()
+
 def send_minimal_dns_request(server_ip, domain :str, port):
-    # Stelle sicher, dass der Domainname absolut ist
     if not domain.endswith('.'):
         domain += '.'
 
@@ -54,43 +70,11 @@ def send_minimal_dns_request(server_ip, domain :str, port):
         sock.sendto(request_bytes, (server_ip, port))
         try:
             response_bytes, addr = sock.recvfrom(512)
-            response = dns.message.from_wire(response_bytes)  # Konvertiere die Antwort in ein lesbares DNS-Format
+            response = dns.message.from_wire(response_bytes)
             a =  eval(print_records(response, dns.rdatatype.TXT))
             return a
         except socket.timeout:
             print("No response received (Timeout)")
-
-def print_records(response, record_type):
-    records = []
-
-    for answer in response.answer:
-        if answer.rdtype == record_type:
-            for item in answer.items:
-                if record_type == dns.rdatatype.A:
-                    records.append(item.address)
-                elif record_type == dns.rdatatype.TXT:
-                    records.append(b''.join(item.strings).decode())
-                elif record_type == dns.rdatatype.MX:
-                    records.append(f"Priority: {item.preference}, Mail Exchange: {item.exchange}")
-
-    if records:
-        for record in records:
-                return record
-    else:
-        print(f"No {dns.rdatatype.to_text(record_type)} records found.")
-    return False
-
-def pcap_writer():
-    def sniff_and_write():
-        packets = sniff(iface="eth0", filter="udp and port 53", timeout=8)
-        wrpcap("send_data.pcap", packets)
-        packets = rdpcap("send_data.pcap")
-        with open("packet_details.txt", "w") as file:
-            for packet in packets:
-                file.write(packet.show(dump=True) + "\n")
-    thread = threading.Thread(target=sniff_and_write)
-    thread.start()
-
 
 
 if __name__ == "__main__":

@@ -23,13 +23,8 @@ def dns_decompose(text):
         return None
 
 def hash_string(input_string):
-    # Erstelle ein SHA-256 Hash-Objekt
     sha256_hash = hashlib.sha256()
-
-    # Füge den String dem Hash-Objekt hinzu (muss zuerst in Bytes umgewandelt werden)
     sha256_hash.update(input_string.encode('utf-8'))
-
-    # Gib den Hash als hexadezimale Darstellung zurück
     return sha256_hash.hexdigest()
 
 def start_server(port):
@@ -77,19 +72,14 @@ def start_server(port):
                     print("No Additional Section found in the request.")
                     message = ["True"]
 
-                # Erstelle eine Antwort auf die Anfrage
                 response = dns.message.make_response(request)
 
-                # Name und TTL für die Antwort setzen
                 name = request.question[0].name
                 ttl = 300
-
-                # TXT-Record für die Antwort hinzufügen
                 rdata = dns.rdtypes.ANY.TXT.TXT(dns.rdataclass.IN, dns.rdatatype.TXT, message)
                 rrset = dns.rrset.from_rdata(name, ttl, rdata)
                 response.answer.append(rrset)
 
-                # Sende die Antwort an den Client
                 sock.sendto(response.to_wire(), addr)
 
             except Exception as e:
