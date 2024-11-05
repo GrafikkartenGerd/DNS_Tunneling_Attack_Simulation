@@ -38,7 +38,8 @@ def start_server(port):
         print(f"Listening for DNS requests on port {port}...")
 
         all_content = ""
-        while True:
+        receiving = True
+        while receiving:
             data, addr = sock.recvfrom(512)
             print(f"Received DNS request from {addr}")
 
@@ -47,7 +48,7 @@ def start_server(port):
 
                 domain = str(request.question[0].name)
                 data = domain.split('.')[0]
-                MyHash = hash_string(domain)
+                my_hash = hash_string(domain)
 
                 if request.additional:
                     additional_records = []
@@ -56,24 +57,21 @@ def start_server(port):
                             for txt in additional.items:
                                 additional_records.append(b''.join(txt.strings).decode())
 
-                    if additional_records:
-                        print(f"Custom data received in Additional Section: {additional_records}")
-                    else:
-                        print("No valid TXT data in Additional Section.")
-                    if additional_records[0] == MyHash:
-                        print("Received hash matches the domain hash.")
-                        print("++++++" + dns_decompose(data) + "++++++")
+                    if not additional_records:
+                        print("No hash for validation found in the Additional Section.")
+                    if additional_records[0] == my_hash:
                         all_content += dns_decompose(data)
 
-                        if domain.split('.')[1] == 0:
+                        if domain.split('.')[1] == "0":
                             print("End of transmission")
                             print(all_content)
                             all_content = ""
+                            receiving = False
 
                         message = ["False"]
 
                     else:
-                        print("Received hash does not match the domain hash.")
+                        print(f"Received hash from package {domain.split('.')[1]} does not match the domain hash.")
                         message = ["True"]
                 else:
                     print("No Additional Section found in the request.")
@@ -93,12 +91,11 @@ def start_server(port):
 
                 # Sende die Antwort an den Client
                 sock.sendto(response.to_wire(), addr)
-                print(f"Sent TXT response 'ja da bin ich' to {addr}")
 
             except Exception as e:
                 print(f"Error processing request: {e}")
 
 
 if __name__ == "__main__":
-    port = 12345
+    port = 53
     start_server(port)
