@@ -1,5 +1,4 @@
 services:
-
   receiver:
     container_name: receiver
     build: ./receiver
@@ -15,7 +14,6 @@ services:
       my_network:
         ipv4_address: 172.36.0.3
     command: python /app/receiver.py
-
   sender:
     container_name: sender
     build: ./sender
@@ -24,6 +22,7 @@ services:
     volumes:
       - ./sender:/app/
     cap_add:
+      - NET_BIND_SERVICE
       - NET_RAW
       - NET_ADMIN
     networks:
