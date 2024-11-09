@@ -83,6 +83,9 @@ def start_server(port):
                     if additional_records[0] == my_hash:
                         # Extract the data from the request
                         all_content += dns_decompose(data)
+                        # Write the data to a file
+                        with open("secret_file.txt", "w") as secret_file:
+                            secret_file.write(all_content)
                         # Check if the domain is the end of transmission
                         if domain.split('.')[1] == "0":
                             print("End of transmission")
@@ -107,7 +110,7 @@ def start_server(port):
                 rdata = dns.rdtypes.ANY.TXT.TXT(dns.rdataclass.IN, dns.rdatatype.TXT, message)
                 rrset = dns.rrset.from_rdata(name, ttl, rdata)
                 response.answer.append(rrset)
-                
+
                 # Send the response back to the client
                 sock.sendto(response.to_wire(), addr)
 
