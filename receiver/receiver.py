@@ -33,7 +33,7 @@ def pcap_writer():
     # Sniff packets on the eth0 interface and write them to a pcap file
     def sniff_and_write():
         packets = sniff(iface="eth0", filter="udp and port 53", timeout=8)
-        wrpcap("send_data.pcap", packets)
+        wrpcap("receiv_data.pcap", packets)
         # Write the packet details to a text file
         with open("packet_details.txt", "w") as file:
             for packet in packets:

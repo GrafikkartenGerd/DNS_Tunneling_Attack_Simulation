@@ -1,4 +1,5 @@
 from time import sleep
+import base64
 import dns.message
 import dns.query
 import dns.rdata
