@@ -35,7 +35,7 @@ def pcap_writer():
         packets = sniff(iface="eth0", filter="udp and port 53", timeout=8)
         wrpcap("receiv_data.pcap", packets)
         # Write the packet details to a text file
-        with open("packet_details.txt", "w") as file:
+        with open("packet_details_receiver.txt", "w") as file:
             for packet in packets:
                 file.write(packet.show(dump=True) + "\n")
     # Start the sniffing and writing thread
