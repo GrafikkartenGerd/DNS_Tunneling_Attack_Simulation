@@ -83,12 +83,12 @@ def start_server(port):
                     if additional_records[0] == my_hash:
                         # Extract the data from the request
                         all_content += dns_decompose(data)
-                        # Write the data to a file
-                        with open("secret_file.txt", "w") as secret_file:
-                            secret_file.write(all_content)
                         # Check if the domain is the end of transmission
                         if domain.split('.')[1] == "0":
                             print("End of transmission")
+                            # Write the data to a file
+                            with open("secret_file.txt", "w") as secret_file:
+                                secret_file.write(all_content)
                             print(all_content)
                             all_content = ""
                             receiving = False
